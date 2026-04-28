@@ -9,7 +9,7 @@ export default function RegisterPage() {
   const [pkg, setPkg] = useState('')
   const [form, setForm] = useState<Record<string,string>>({})
 
-  function update(k: string, v: string) { setForm(f => ({...f, [k]: v})) }
+  function update(k: string, v: string) { setForm((f: Record<string,string>) => ({...f, [k]: v})) }
 
   return (
     <main className="bg-black min-h-screen flex">

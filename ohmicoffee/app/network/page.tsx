@@ -49,7 +49,7 @@ export default async function NetworkPage() {
               <span className={i===1?'text-white':'text-red'}>{fmt(pkg.direct_commission)} per referral</span>
             </div>
             <ul className="space-y-2 mb-8">
-              {pkg.features?.map(f => (
+              {pkg.features?.map((f: string) => (
                 <li key={f} className="flex items-center gap-2 text-[12px] font-light" style={{color:i===1?'rgba(255,255,255,0.8)':'rgba(255,255,255,0.5)'}}>
                   <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:i===1?'rgba(255,255,255,0.4)':'#C41E4A'}} />
                   {f}

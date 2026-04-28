@@ -34,7 +34,7 @@ export default function NetworkTeaser({ packages, ranks }: { packages: Package[]
             </div>
             <div className="text-white/40 text-[12px] mb-6">+ {fmt(pkg.monthly_fee)}/month</div>
             <ul className="space-y-2 mb-8">
-              {pkg.features?.map(f => (
+              {pkg.features?.map((f: string) => (
                 <li key={f} className="flex items-center gap-2 text-[12px] font-light" style={{color: i===1 ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.55)'}}>
                   <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background: i===1 ? 'rgba(255,255,255,0.4)' : '#C41E4A'}} />
                   {f}

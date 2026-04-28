@@ -6,13 +6,13 @@ import { supabase } from '@/lib/supabase'
 export default function AdminKYC() {
   const [pending, setPending] = useState<any[]>([])
   useEffect(() => {
-    supabase.from('representatives').select('*').eq('kyc_status','submitted').then(({ data }) => setPending(data || []))
+    supabase.from('representatives').select('*').eq('kyc_status','submitted').then(({ data }) => setPending((data || []) as any[]))
   }, [])
 
   async function verify(id: string, status: string) {
     await supabase.from('representatives').update({ kyc_status: status, kyc_verified_at: status === 'verified' ? new Date().toISOString() : null, is_active: status === 'verified' }).eq('id', id)
     const { data } = await supabase.from('representatives').select('*').eq('kyc_status','submitted')
-    setPending(data || [])
+    setPending((data || []) as any[])
   }
 
   return (

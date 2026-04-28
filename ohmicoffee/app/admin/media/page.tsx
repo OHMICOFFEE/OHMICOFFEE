@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 export default function AdminMedia() {
   const [media, setMedia] = useState<any[]>([])
   useEffect(() => {
-    supabase.from('media').select('*').order('created_at', { ascending: false }).then(({ data }) => setMedia(data || []))
+    supabase.from('media').select('*').order('created_at', { ascending: false }).then(({ data }) => setMedia((data || []) as any[]))
   }, [])
 
   async function upload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -18,7 +18,7 @@ export default function AdminMedia() {
       const { data: urlData } = supabase.storage.from('products').getPublicUrl(path)
       await supabase.from('media').insert({ name: file.name, url: urlData.publicUrl, size_bytes: file.size, mime_type: file.type })
       const { data: m } = await supabase.from('media').select('*').order('created_at', { ascending: false })
-      setMedia(m || [])
+      setMedia((m || []) as any[])
     }
   }
 

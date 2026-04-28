@@ -10,9 +10,12 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState<Partial<Product> | null>(null)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    supabase.from('products').select('*').order('sort_order').then(({ data }) => setProducts(data || []))
-  }, [])
+  async function load() {
+    const { data } = await supabase.from('products').select('*').order('sort_order')
+    setProducts((data || []) as Product[])
+  }
+
+  useEffect(() => { load() }, [])
 
   async function save() {
     if (!editing) return
@@ -22,19 +25,27 @@ export default function AdminProducts() {
     } else {
       await supabase.from('products').insert({ ...editing, slug: editing.name?.toLowerCase().replace(/ /g,'-') })
     }
-    const { data } = await supabase.from('products').select('*').order('sort_order')
-    setProducts(data || [])
+    await load()
     setShowModal(false)
     setEditing(null)
     setSaving(false)
   }
 
-  function Field({ label, field, type='text' }: { label:string; field:keyof Product; type?:string }) {
+  function update(field: keyof Product, value: string | number) {
+    setEditing(prev => ({ ...prev, [field]: value }))
+  }
+
+  function Field({ label, field, type = 'text' }: { label: string; field: keyof Product; type?: string }) {
+    const val = editing ? (editing as Record<string, unknown>)[field as string] : ''
     return (
       <div>
         <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">{label}</label>
-        <input type={type} value={(editing as any)?.[field] || ''} onChange={e => setEditing(prev => ({...prev, [field]: type==='number'?parseInt(e.target.value)||0:e.target.value}))}
-          className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2" />
+        <input
+          type={type}
+          value={(val as string) || ''}
+          onChange={e => update(field, type === 'number' ? parseInt(e.target.value) || 0 : e.target.value)}
+          className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2"
+        />
       </div>
     )
   }
@@ -65,7 +76,7 @@ export default function AdminProducts() {
                   <td className="px-4 py-3"><span className={`text-[10px] tracking-wider uppercase px-2 py-[2px] ${p.status==='active'?'bg-green-400/10 text-green-400':p.status==='draft'?'bg-yellow-400/10 text-yellow-400':'bg-red/10 text-red'}`}>{p.status}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => { setEditing(p); setShowModal(true) }} className="border border-white/[0.12] text-white/40 hover:border-red hover:text-red text-[11px] px-2 py-1 transition-all">Edit</button>
-                    <button onClick={async () => { await supabase.from('products').update({status:'draft'}).eq('id',p.id); const { data } = await supabase.from('products').select('*').order('sort_order'); setProducts(data||[]) }} className="border border-white/[0.12] text-white/40 hover:border-red hover:text-red text-[11px] px-2 py-1 transition-all">Archive</button>
+                    <button onClick={async () => { await supabase.from('products').update({status:'draft'}).eq('id',p.id); await load() }} className="border border-white/[0.12] text-white/40 hover:border-red hover:text-red text-[11px] px-2 py-1 transition-all">Archive</button>
                   </td>
                 </tr>
               ))}
@@ -73,7 +84,6 @@ export default function AdminProducts() {
           </table>
         </div>
       </div>
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/85 z-[900] flex items-center justify-center p-6" onClick={() => setShowModal(false)}>
           <div className="bg-[#0c0c0c] border border-white/[0.1] w-full max-w-[650px] max-h-[88vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -85,7 +95,7 @@ export default function AdminProducts() {
               <Field label="Product Name" field="name" />
               <div>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">Type</label>
-                <select value={editing?.type||'single_origin'} onChange={e=>setEditing(p=>({...p,type:e.target.value as any}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
+                <select value={editing?.type || 'single_origin'} onChange={e => update('type', e.target.value)} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
                   <option value="single_origin">Single Origin</option>
                   <option value="infused">Infused Single Origin</option>
                 </select>
@@ -99,7 +109,7 @@ export default function AdminProducts() {
               <Field label="Tasting Notes" field="tasting_notes" />
               <Field label="Flavour Profile" field="flavour_profile" />
               <div className="col-span-2 border-t border-white/[0.07] pt-4">
-                <div className="text-[10px] tracking-[0.25em] uppercase text-white/30 mb-3">Retail Pricing (ZAR cents)</div>
+                <div className="text-[10px] tracking-[0.25em] uppercase text-white/30 mb-3">Retail Pricing (ZAR cents × 100)</div>
                 <div className="grid grid-cols-3 gap-3">
                   <Field label="250g Retail" field="price_250g" type="number" />
                   <Field label="500g Retail" field="price_500g" type="number" />
@@ -107,7 +117,7 @@ export default function AdminProducts() {
                 </div>
               </div>
               <div className="col-span-2">
-                <div className="text-[10px] tracking-[0.25em] uppercase text-white/30 mb-3">Wholesale Pricing (ZAR cents)</div>
+                <div className="text-[10px] tracking-[0.25em] uppercase text-white/30 mb-3">Wholesale Pricing (ZAR cents × 100)</div>
                 <div className="grid grid-cols-3 gap-3">
                   <Field label="250g Wholesale" field="wholesale_250g" type="number" />
                   <Field label="500g Wholesale" field="wholesale_500g" type="number" />
@@ -116,9 +126,9 @@ export default function AdminProducts() {
               </div>
               <div>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">Status</label>
-                <select value={editing?.status||'active'} onChange={e=>setEditing(p=>({...p,status:e.target.value}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
-                  <option value="active">Active — Live on Site</option>
-                  <option value="draft">Draft — Hidden</option>
+                <select value={editing?.status || 'active'} onChange={e => update('status', e.target.value)} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
                   <option value="out_of_stock">Out of Stock</option>
                 </select>
               </div>

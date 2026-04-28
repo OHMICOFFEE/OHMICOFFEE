@@ -83,19 +83,19 @@ export default function AdminNetwork() {
               {[['first_name','First Name'],['last_name','Last Name'],['email','Email'],['phone','Phone'],['id_number','SA ID Number'],['bank_name','Bank Name'],['bank_account_number','Account Number'],['bank_branch_code','Branch Code']].map(([k,l]) => (
                 <div key={k}>
                   <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">{l}</label>
-                  <input type="text" value={form[k]||''} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}
+                  <input type="text" value={form[k]||''} onChange={e=>setForm((f: Record<string,string>)=>({...f,[k]:e.target.value}))}
                     className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2" />
                 </div>
               ))}
               <div>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">Leg Placement</label>
-                <select value={form.leg||'left'} onChange={e=>setForm(f=>({...f,leg:e.target.value}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
+                <select value={form.leg||'left'} onChange={e=>setForm((f: Record<string,string>)=>({...f,leg:e.target.value}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
                   <option value="left">Left Leg</option><option value="right">Right Leg</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[10px] tracking-[0.2em] uppercase text-white/30 mb-1">Membership Tier</label>
-                <select value={form.tier||'starter'} onChange={e=>setForm(f=>({...f,tier:e.target.value}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
+                <select value={form.tier||'starter'} onChange={e=>setForm((f: Record<string,string>)=>({...f,tier:e.target.value}))} className="w-full bg-[#1c1c1c] border border-white/[0.1] text-white text-[12px] px-3 py-2">
                   <option value="starter">Starter — R1,000</option><option value="builder">Builder — R2,000</option><option value="elite">Elite — R5,000</option>
                 </select>
               </div>

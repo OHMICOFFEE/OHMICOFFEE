@@ -11,7 +11,7 @@ export default function AdminSettings() {
   useEffect(() => {
     supabase.from('site_settings').select('*').then(({ data }) => {
       const s: Record<string,string> = {}
-      data?.forEach((x: any) => { s[x.key] = x.value })
+      data?.forEach((x: {key:string;value:string}) => { s[x.key] = x.value })
       setSettings(s)
     })
   }, [])
@@ -40,14 +40,14 @@ export default function AdminSettings() {
       <AdminTopbar title="Site Settings" action={{ label: saving ? 'Saving...' : saved ? '✓ Saved' : 'Save All', onClick: save }} />
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-[700px] space-y-5">
-          {fields.map(f => (
+          {fields.map((f: {key:string;label:string;multiline?:boolean}) => (
             <div key={f.key} className="bg-[#0c0c0c] border border-white/[0.07] p-5">
               <label className="block text-[10px] tracking-[0.25em] uppercase text-white/30 mb-2 font-medium">{f.label}</label>
               {f.multiline ? (
-                <textarea value={settings[f.key] || ''} onChange={e => setSettings(s => ({...s, [f.key]: e.target.value}))}
+                <textarea value={settings[f.key] || ''} onChange={e => setSettings((s: Record<string,string>) => ({...s, [f.key]: e.target.value}))}
                   rows={4} className="w-full bg-[#141414] border border-white/[0.1] text-white text-[12px] px-3 py-2 resize-y" />
               ) : (
-                <input type="text" value={settings[f.key] || ''} onChange={e => setSettings(s => ({...s, [f.key]: e.target.value}))}
+                <input type="text" value={settings[f.key] || ''} onChange={e => setSettings((s: Record<string,string>) => ({...s, [f.key]: e.target.value}))}
                   className="w-full bg-[#141414] border border-white/[0.1] text-white text-[12px] px-3 py-2" />
               )}
             </div>
