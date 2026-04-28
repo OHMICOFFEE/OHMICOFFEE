@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0F1419;
+  --navy-l: #1a2332;
+  --navy-b: #1e2d3d;
+  --cream: #F5EDD6;
+  --cream-m: #c9b99a;
+  --crimson: #C41E4A;
+  --crimson-d: #9e1039;
+  --ink: #050505;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--navy);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--crimson); }
+
+.font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+.font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* Inputs */
+input, select, textarea {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--navy-b);
+  color: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--crimson);
+}
+input::placeholder { color: rgba(197,185,154,0.25); }
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-weight: 500; }
+tr:hover td { background: rgba(255,255,255,0.015); }
+
+/* Nav links */
+.nav-link {
+  color: rgba(197,185,154,0.4);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.nav-link:hover, .nav-link.active { color: var(--cream); }
+.nav-link.active { border-left: 2px solid var(--crimson); }
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.pulse { animation: pulse 2s ease infinite; }
