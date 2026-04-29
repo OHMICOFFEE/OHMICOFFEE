@@ -3,29 +3,26 @@ export type Rank = {
   name: string
   left: number
   right: number
-  monthly?: number
-  pct?: number
-  type: 'fixed' | 'profit'
-  min_personal?: number
+  monthly: number
+  type: 'fixed'
+  min_personal: number
 }
 
 export const RANKS: Rank[] = [
-  { id: 'R1',  name: 'R1',  left: 5,    right: 5,    monthly: 2000,   type: 'fixed' },
-  { id: 'R2',  name: 'R2',  left: 10,   right: 10,   monthly: 3500,   type: 'fixed' },
-  { id: 'R3',  name: 'R3',  left: 20,   right: 20,   monthly: 6000,   type: 'fixed' },
-  { id: 'R4',  name: 'R4',  left: 50,   right: 50,   monthly: 12000,  type: 'fixed',  min_personal: 4 },
-  { id: 'R5',  name: 'R5',  left: 100,  right: 100,  monthly: 35000,  type: 'fixed',  min_personal: 4 },
-  { id: 'R6',  name: 'R6',  left: 150,  right: 150,  monthly: 55000,  type: 'fixed',  min_personal: 4 },
-  { id: 'R7',  name: 'R7',  left: 300,  right: 300,  monthly: 90000,  type: 'fixed',  min_personal: 4 },
-  { id: 'R8',  name: 'R8',  left: 600,  right: 600,  monthly: 180000, type: 'fixed',  min_personal: 4 },
-  { id: 'R9',  name: 'R9',  left: 1000, right: 1000, pct: 3,          type: 'profit' },
-  { id: 'R10', name: 'R10', left: 2000, right: 2000, pct: 2,          type: 'profit' },
-  { id: 'R11', name: 'R11', left: 5000, right: 5000, pct: 1,          type: 'profit' },
+  { id: 'R1', name: 'R1', left: 5,   right: 5,   monthly: 2000,   type: 'fixed', min_personal: 2 },
+  { id: 'R2', name: 'R2', left: 10,  right: 10,  monthly: 3500,   type: 'fixed', min_personal: 2 },
+  { id: 'R3', name: 'R3', left: 20,  right: 20,  monthly: 6000,   type: 'fixed', min_personal: 2 },
+  { id: 'R4', name: 'R4', left: 50,  right: 50,  monthly: 12000,  type: 'fixed', min_personal: 4 },
+  { id: 'R5', name: 'R5', left: 100, right: 100, monthly: 35000,  type: 'fixed', min_personal: 4 },
+  { id: 'R6', name: 'R6', left: 150, right: 150, monthly: 55000,  type: 'fixed', min_personal: 4 },
+  { id: 'R7', name: 'R7', left: 300, right: 300, monthly: 90000,  type: 'fixed', min_personal: 4 },
+  { id: 'R8', name: 'R8', left: 600, right: 600, monthly: 180000, type: 'fixed', min_personal: 4 },
 ]
 
 export const MONTHLY = {
   subscription: 1500,
-  coffee_cost: 750,
+  coffee_cost: 500,
+  license: 250,
   pool: 750,
 }
 
@@ -38,26 +35,17 @@ export const ONCOFF = {
 }
 
 export const DIRECT_COMMISSION = {
-  one_signup: 350,
-  two_signups: 700,
-  three_plus_monthly: 1500,
-  four_monthly: 2000,
-  five_plus: 500,
+  one_signup:           350,
+  two_signups:          700,
+  three_plus_monthly:   1500,
+  four_monthly:         2000,
+  five_plus:            500,
 }
 
-export const WHOLESALE_TIERS = [
-  { kg: 25,  price: 50000, label: '25kg' },
-  { kg: 50,  price: 50000, label: '50kg' },
-  { kg: 75,  price: 50000, label: '75kg' },
-  { kg: 100, price: 50000, label: '100kg' },
-]
-
 export function getRank(left: number, right: number, personalActives: number = 0): Rank | null {
-  return [...RANKS].reverse().find(r => {
-    const legOk = left >= r.left && right >= r.right
-    const personalOk = !r.min_personal || personalActives >= r.min_personal
-    return legOk && personalOk
-  }) || null
+  return [...RANKS].reverse().find(r =>
+    left >= r.left && right >= r.right && personalActives >= r.min_personal
+  ) || null
 }
 
 export function getNextRank(left: number, right: number, personalActives: number = 0): Rank | null {
@@ -82,13 +70,13 @@ export function calcDirectCommission(weeklySignups: number, monthlySignups: numb
 export function nextFriday(from = new Date()): Date {
   const d = new Date(from)
   const day = d.getDay()
-  const daysUntilFriday = day <= 5 ? 5 - day : 7 - day + 5
-  d.setDate(d.getDate() + (daysUntilFriday === 0 ? 7 : daysUntilFriday))
+  const daysUntil = day <= 5 ? 5 - day : 7 - day + 5
+  d.setDate(d.getDate() + (daysUntil === 0 ? 7 : daysUntil))
   return d
 }
 
 export function residualPayoutDate(year: number, month: number): Date {
   const lastDay = new Date(year, month, 0)
-  lastDay.setDate(lastDay.getDate() + 7)
+  lastDay.setDate(lastDay.getDate() + 14)
   return lastDay
 }
