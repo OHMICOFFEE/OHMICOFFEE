@@ -5,190 +5,159 @@ import { supabase } from '@/lib/supabase'
 import { zar } from '@/lib/types'
 
 const empty = {
-  name: '',
-  once_off_fee: 200000,
-  monthly_fee: 150000,
-  direct_commission: 50000,
-  description: '',
-  features: '',
-  is_active: true,
-  sort_order: 1,
+  name:'', origin:'', roast:'', type:'single_origin', sca_score:85,
+  tasting_notes:'', flavour_profile:'', body:'', process:'', masl:'',
+  price_250g:21000, price_500g:34000, price_1kg:58000,
+  wholesale_250g:13000, wholesale_500g:21000, wholesale_1kg:36000,
+  image_url:'', status:'active'
 }
 
-export default function AdminPackages() {
-  const [packages, setPackages] = useState<any[]>([])
+export default function AdminProducts() {
+  const [products, setProducts] = useState<any[]>([])
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState<any>(empty)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState<string|null>(null)
 
   async function load() {
-    const { data } = await supabase.from('packages').select('*').order('sort_order')
-    setPackages(data || [])
+    const { data } = await supabase.from('products').select('*').order('sort_order')
+    setProducts(data || [])
   }
   useEffect(() => { load() }, [])
 
   function set(k: string, v: any) { setForm((f:any) => ({ ...f, [k]: v })) }
+  function openAdd() { setForm({...empty}); setModal(true) }
+  function openEdit(p: any) { setForm({...p}); setModal(true) }
 
   async function save() {
-    if (!form.name) return alert('Package name is required')
+    if (!form.name) return alert('Product name is required')
     setSaving(true)
-    const payload = {
-      name: form.name,
-      once_off_fee: parseInt(form.once_off_fee)||0,
-      monthly_fee: parseInt(form.monthly_fee)||0,
-      direct_commission: parseInt(form.direct_commission)||0,
-      description: form.description,
-      features: typeof form.features === 'string'
-        ? form.features.split('\n').filter((f:string)=>f.trim())
-        : form.features,
-      is_active: form.is_active,
-      sort_order: parseInt(form.sort_order)||1,
-    }
     if (form.id) {
-      await supabase.from('packages').update(payload).eq('id', form.id)
+      const { error } = await supabase.from('products').update({
+        name: form.name, origin: form.origin, roast: form.roast,
+        type: form.type, sca_score: parseInt(form.sca_score)||85,
+        tasting_notes: form.tasting_notes, flavour_profile: form.flavour_profile,
+        body: form.body, process: form.process, masl: form.masl,
+        price_250g: parseInt(form.price_250g)||0,
+        price_500g: parseInt(form.price_500g)||0,
+        price_1kg: parseInt(form.price_1kg)||0,
+        wholesale_250g: parseInt(form.wholesale_250g)||0,
+        wholesale_500g: parseInt(form.wholesale_500g)||0,
+        wholesale_1kg: parseInt(form.wholesale_1kg)||0,
+        image_url: form.image_url, status: form.status,
+        updated_at: new Date().toISOString(),
+      }).eq('id', form.id)
+      if (error) { alert('Save failed: ' + error.message); setSaving(false); return }
     } else {
-      await supabase.from('packages').insert(payload)
+      const slug = form.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')
+      const { error } = await supabase.from('products').insert({
+        ...form, slug,
+        sca_score: parseInt(form.sca_score)||85,
+        price_250g: parseInt(form.price_250g)||0,
+        price_500g: parseInt(form.price_500g)||0,
+        price_1kg: parseInt(form.price_1kg)||0,
+        wholesale_250g: parseInt(form.wholesale_250g)||0,
+        wholesale_500g: parseInt(form.wholesale_500g)||0,
+        wholesale_1kg: parseInt(form.wholesale_1kg)||0,
+      })
+      if (error) { alert('Save failed: ' + error.message); setSaving(false); return }
     }
     await load(); setModal(false); setForm({...empty}); setSaving(false)
   }
 
-  async function toggleActive(id: string, current: boolean) {
-    await supabase.from('packages').update({ is_active: !current }).eq('id', id)
+  async function deleteProduct(id: string, name: string) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    setDeleting(id)
+    await supabase.from('products').delete().eq('id', id)
+    await load()
+    setDeleting(null)
+  }
+
+  async function toggleStatus(id: string, current: string) {
+    await supabase.from('products').update({ status: current === 'active' ? 'draft' : 'active' }).eq('id', id)
     await load()
   }
 
-  async function deletePackage(id: string, name: string) {
-    if (!confirm(`Delete package "${name}"?`)) return
-    await supabase.from('packages').delete().eq('id', id)
-    await load()
-  }
-
-  function openEdit(p: any) {
-    setForm({
-      ...p,
-      features: Array.isArray(p.features) ? p.features.join('\n') : p.features || '',
-    })
-    setModal(true)
-  }
+  const F = ({ label, k, type='text', span=false }: { label:string; k:string; type?:string; span?:boolean }) => (
+    <div className={`field${span?' span-2':''}`}>
+      <label>{label}</label>
+      <input type={type} value={form[k]??''} onChange={e=>set(k,e.target.value)} />
+    </div>
+  )
 
   return (
     <div className="main">
-      <Topbar title="Rep Packages" action={
-        <button className="btn btn-red" onClick={()=>{ setForm({...empty}); setModal(true) }}>+ Add Package</button>
-      } />
+      <Topbar title={`Products (${products.length})`} action={<button className="btn btn-red" onClick={openAdd}>+ Add Product</button>} />
       <div className="page">
-        {/* Info box */}
-        <div className="pool-meter" style={{marginBottom:20}}>
-          <div className="pool-meter-title">Current Package Structure</div>
-          <div className="pool-row">
-            <span className="pool-key">Once-off join fee</span>
-            <span className="pool-val">R2,000 — splits: R500 license + R750 coffee + R500 commission + R250 profit</span>
-          </div>
-          <div className="pool-row">
-            <span className="pool-key">Monthly subscription</span>
-            <span className="pool-val">R1,500 — splits: R250 license + R500 coffee + R750 pool</span>
-          </div>
-          <div className="pool-row">
-            <span className="pool-key">Direct commission</span>
-            <span className="pool-val">R500 per signup (paid following Friday)</span>
-          </div>
-        </div>
-
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:20}}>
-          {packages.map(pkg => (
-            <div key={pkg.id} style={{background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:4,overflow:'hidden'}}>
-              <div style={{background:pkg.is_active?'var(--red)':'var(--bg3)',padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div>
-                  <div style={{fontFamily:'Cormorant Garamond,Georgia,serif',fontSize:20,color:pkg.is_active?'var(--bg)':'var(--text)',fontWeight:500}}>{pkg.name}</div>
-                  <div style={{fontSize:9,color:pkg.is_active?'rgba(245,237,214,0.65)':'var(--text4)',letterSpacing:'0.14em',textTransform:'uppercase',marginTop:2}}>{pkg.is_active?'Active':'Inactive'}</div>
-                </div>
-                <div style={{textAlign:'right'}}>
-                  <div style={{fontFamily:'Cormorant Garamond,Georgia,serif',fontSize:22,color:pkg.is_active?'var(--bg)':'var(--red)',lineHeight:1}}>{zar(pkg.once_off_fee)}</div>
-                  <div style={{fontSize:10,color:pkg.is_active?'rgba(245,237,214,0.6)':'var(--text4)',marginTop:2}}>once-off</div>
-                </div>
-              </div>
-              <div style={{padding:'14px 18px'}}>
-                <div style={{fontSize:13,color:'var(--text2)',marginBottom:12}}>{zar(pkg.monthly_fee)}<span style={{fontSize:10,color:'var(--text4)'}}>/month</span></div>
-                <div style={{fontSize:11,color:'var(--red)',marginBottom:12}}>Direct commission: {zar(pkg.direct_commission)}</div>
-                {Array.isArray(pkg.features) && pkg.features.length > 0 && (
-                  <ul style={{listStyle:'none',marginBottom:14}}>
-                    {pkg.features.map((f:string,i:number) => (
-                      <li key={i} style={{fontSize:11,color:'var(--text3)',padding:'3px 0',borderBottom:'1px solid var(--border)',display:'flex',gap:8,alignItems:'flex-start'}}>
-                        <span style={{color:'var(--red)',flexShrink:0}}>·</span>{f}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div style={{display:'flex',gap:6,marginTop:12}}>
-                  <button className="btn btn-ghost" style={{flex:1}} onClick={()=>openEdit(pkg)}>Edit</button>
-                  <button className="btn btn-ghost" style={{flex:1,color:pkg.is_active?'var(--yellow)':'var(--green)'}} onClick={()=>toggleActive(pkg.id,pkg.is_active)}>
-                    {pkg.is_active?'Deactivate':'Activate'}
-                  </button>
-                  <button className="btn btn-ghost" style={{color:'var(--red)',borderColor:'rgba(196,30,74,0.25)'}} onClick={()=>deletePackage(pkg.id,pkg.name)}>✗</button>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {packages.length === 0 && (
-            <div style={{gridColumn:'1/-1',textAlign:'center',padding:'60px 20px',color:'var(--text4)',fontSize:12,letterSpacing:'0.08em'}}>
-              No packages yet — add your first one above
-            </div>
-          )}
+        <div className="table-wrap">
+          <table>
+            <thead><tr>{['Name','Type','SCA','250g','500g','1kg','Status','Actions'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+            <tbody>
+              {products.length===0 && <tr className="empty-row"><td colSpan={8}>No products</td></tr>}
+              {products.map(p=>(
+                <tr key={p.id}>
+                  <td className="td-name">{p.name}</td>
+                  <td><span className="badge badge-gray">{p.type==='infused'?'Infused':'Single Origin'}</span></td>
+                  <td style={{color:'var(--text3)'}}>{p.sca_score}</td>
+                  <td>{zar(p.price_250g)}</td>
+                  <td>{zar(p.price_500g)}</td>
+                  <td>{zar(p.price_1kg)}</td>
+                  <td><button onClick={()=>toggleStatus(p.id,p.status)} style={{background:'none',border:'none',cursor:'pointer',padding:0}}><span className={`badge ${p.status==='active'?'badge-green':'badge-gray'}`}>{p.status}</span></button></td>
+                  <td><div style={{display:'flex',gap:6}}>
+                    <button className="btn btn-ghost" onClick={()=>openEdit(p)}>Edit</button>
+                    <button className="btn btn-ghost" style={{color:'var(--red)',borderColor:'rgba(196,30,74,0.25)'}} disabled={deleting===p.id} onClick={()=>deleteProduct(p.id,p.name)}>{deleting===p.id?'…':'Delete'}</button>
+                  </div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-
       {modal && (
-        <div className="modal-overlay" onClick={()=>{ if(!saving){ setModal(false); setForm({...empty}) }}}>
-          <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-overlay" onClick={()=>{ if(!saving){setModal(false);setForm({...empty})} }}>
+          <div className="modal" style={{maxWidth:620}} onClick={e=>e.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">{form.id?`Edit — ${form.name}`:'Add Package'}</span>
-              <button className="modal-close" onClick={()=>{ setModal(false); setForm({...empty}) }}>×</button>
+              <span className="modal-title">{form.id?`Edit — ${form.name}`:'Add New Product'}</span>
+              <button className="modal-close" onClick={()=>{setModal(false);setForm({...empty})}}>×</button>
             </div>
             <div className="modal-body">
               <div className="grid-2">
-                <div className="field span-2">
-                  <label>Package Name</label>
-                  <input type="text" value={form.name||''} onChange={e=>set('name',e.target.value)} placeholder="e.g. Standard" />
-                </div>
-                <div className="field">
-                  <label>Once-off Fee (cents — R2,000 = 200000)</label>
-                  <input type="number" value={form.once_off_fee||''} onChange={e=>set('once_off_fee',e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Monthly Fee (cents — R1,500 = 150000)</label>
-                  <input type="number" value={form.monthly_fee||''} onChange={e=>set('monthly_fee',e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Direct Commission (cents — R500 = 50000)</label>
-                  <input type="number" value={form.direct_commission||''} onChange={e=>set('direct_commission',e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>Sort Order</label>
-                  <input type="number" value={form.sort_order||1} onChange={e=>set('sort_order',e.target.value)} />
-                </div>
-                <div className="field span-2">
-                  <label>Description</label>
-                  <input type="text" value={form.description||''} onChange={e=>set('description',e.target.value)} />
-                </div>
-                <div className="field span-2">
-                  <label>Features (one per line)</label>
-                  <textarea value={form.features||''} onChange={e=>set('features',e.target.value)} rows={5} placeholder={"Network position\nRep portal access\nBinary tree placement"} style={{resize:'vertical'}} />
-                </div>
-                <div className="field">
-                  <label>Status</label>
-                  <select value={form.is_active?'active':'inactive'} onChange={e=>set('is_active',e.target.value==='active')}>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                <F label="Product Name" k="name" span />
+                <div className="field"><label>Type</label>
+                  <select value={form.type||'single_origin'} onChange={e=>set('type',e.target.value)}>
+                    <option value="single_origin">Single Origin</option>
+                    <option value="infused">Infused Single Origin</option>
                   </select>
                 </div>
+                <div className="field"><label>Status</label>
+                  <select value={form.status||'active'} onChange={e=>set('status',e.target.value)}>
+                    <option value="active">Active</option>
+                    <option value="draft">Draft</option>
+                    <option value="out_of_stock">Out of Stock</option>
+                  </select>
+                </div>
+                <F label="Origin" k="origin" />
+                <F label="Roast Level" k="roast" />
+                <F label="Process" k="process" />
+                <F label="MASL" k="masl" />
+                <F label="Body" k="body" />
+                <F label="SCA Score" k="sca_score" type="number" />
+                <F label="Tasting Notes" k="tasting_notes" span />
+                <F label="Flavour Profile" k="flavour_profile" span />
+                <div style={{gridColumn:'1/-1',paddingTop:8,borderTop:'1px solid var(--border)'}}>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',color:'var(--text4)',marginBottom:12}}>Retail Pricing (cents — R210 = 21000)</div>
+                  <div className="grid-3"><F label="250g" k="price_250g" type="number" /><F label="500g" k="price_500g" type="number" /><F label="1kg" k="price_1kg" type="number" /></div>
+                </div>
+                <div style={{gridColumn:'1/-1',paddingTop:8,borderTop:'1px solid var(--border)'}}>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',color:'var(--text4)',marginBottom:12}}>Wholesale Pricing (for reps)</div>
+                  <div className="grid-3"><F label="250g" k="wholesale_250g" type="number" /><F label="500g" k="wholesale_500g" type="number" /><F label="1kg" k="wholesale_1kg" type="number" /></div>
+                </div>
+                <F label="Image URL" k="image_url" span />
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-outline" onClick={()=>{ setModal(false); setForm({...empty}) }}>Cancel</button>
-              <button className="btn btn-red" onClick={save} disabled={saving}>
-                {saving?'Saving...':form.id?'Save Changes':'Add Package'}
-              </button>
+              <button className="btn btn-outline" onClick={()=>{setModal(false);setForm({...empty})}}>Cancel</button>
+              <button className="btn btn-red" onClick={save} disabled={saving}>{saving?'Saving...':form.id?'Save Changes':'Add Product'}</button>
             </div>
           </div>
         </div>
